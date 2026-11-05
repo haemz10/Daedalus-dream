@@ -1,6 +1,6 @@
 /* Daedalus Dream — offline support. Bump VERSION whenever any cached file changes. */
 'use strict';
-const VERSION = 'daedalus-dream-v1.0.0';
+const VERSION = 'daedalus-dream-v1.1.0';
 const FONT_CACHE = 'daedalus-dream-fonts';
 const ASSETS = [
   './', './index.html', './style.css', './manifest.webmanifest',

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Full run: auto-plays all 15 story stages (collecting every golden marble), the interludes,
+/* Full run: auto-plays all 30 story stages (collecting every golden marble), the interludes,
  * the true ending, and several Endless Gym floors, on a phone viewport. Fails on any page error.
  *   BASE=http://127.0.0.1:8765/ OUT=./shots node tests/full.cjs
  */
@@ -43,7 +43,7 @@ fs.mkdirSync(OUT, { recursive: true });
     await page.waitForSelector('#modal-result:not([hidden])', { timeout: 120000 });
     const rec = await page.evaluate((sid) => DD.Save.stage(sid), id);
     const ok = rec.clear && rec.marble;
-    console.log(`${id}: clear=${rec.clear} marble=${rec.marble} fast=${rec.fast} time=${rec.best.toFixed(1)}`);
+    console.log(`${id}: clear=${rec.clear} marble=${rec.marble} unhurt=${rec.unhurt} score=${rec.score} time=${rec.best.toFixed(1)}`);
     if (!ok) errors.push('stage ' + id + ' not fully cleared');
   }
   await page.evaluate(() => { DD.timeScale = 1; });

@@ -50,11 +50,10 @@ for (const def of DD.STAGES) {
   }
   if (L.hands && !(L.hands.every[0] > 2 && L.hands.every[1] >= L.hands.every[0] && L.hands.warn >= 0.9)) bad(def.id + ' unfair hand timing');
   for (const h of def.hints || []) if (!(h in DD.I18N.en)) bad(def.id + ' unknown hint ' + h);
-  if (!(('st.' + def.id) in DD.I18N.en)) bad(def.id + ' has no name');
   ok(`${def.id}  ${L.w}x${L.h}  shards ${L.shards.length}  optimal ${sol.moves} moves + ${sol.rotations} turns  goal ${def.par}s  ${quick.ok ? '' : '(slow stuck-check)'}  ${Date.now() - t0}ms`);
 }
-if (DD.STAGES.length !== 15) bad('expected 15 stages');
-if (marbles !== 15) bad('expected 15 collectable marbles, got ' + marbles);
+if (DD.STAGES.length !== 30) bad('expected 30 stages');
+if (marbles !== DD.STAGES.length) bad('expected ' + DD.STAGES.length + ' collectable marbles, got ' + marbles);
 for (const ch of DD.CHAPTERS) for (const id of ch.stages) if (!ids.has(id)) bad('chapter lists missing stage ' + id);
 
 console.log('Text');

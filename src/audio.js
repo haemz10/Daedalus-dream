@@ -6,7 +6,7 @@
   var DD = (globalThis.DD = globalThis.DD || {});
 
   var ctx = null, master = null, musicBus = null, sfxBus = null, revSend = null, noiseBuf = null;
-  var unlocked = false, musicVol = 0.6, sfxVol = 0.8;
+  var unlocked = false, musicVol = 0.6, sfxVol = 0.8, muted = false;
   var tensionOsc = null, tensionGain = null;
 
   function mtof(m) { return 440 * Math.pow(2, (m - 69) / 12); }
@@ -16,7 +16,7 @@
     var AC = globalThis.AudioContext || globalThis.webkitAudioContext;
     if (!AC) return false;
     try { ctx = new AC({ latencyHint: 'interactive' }); } catch (e) { try { ctx = new AC(); } catch (e2) { ctx = null; return false; } }
-    master = ctx.createGain(); master.gain.value = 0.9;
+    master = ctx.createGain(); master.gain.value = muted ? 0 : 0.9;
     var comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.2;
     master.connect(comp); comp.connect(ctx.destination);
@@ -285,7 +285,17 @@
     door: function (t) { noise(t, 0.05, 0.25, sfxBus, 'bandpass', 1800, null, 3); tone('sine', 180, t + 0.03, 0.2, 0.15, sfxBus, 0.003, 90); },
     chuckle: function (t) { for (var i = 0; i < 3; i++) { var g = tone('triangle', 120 - i * 8, t + i * 0.16, 0.1, 0.07, sfxBus, 0.01); wet(g, 0.8); } },
     descend: function (t) { var g = tone('sine', 1300, t, 0.7, 0.12, sfxBus, 0.01, 260); wet(g, 0.5); },
-    heart: function (t) { box(t, 84, 1, 0.18, sfxBus); box(t + 0.1, 91, 2, 0.18, sfxBus); }
+    heart: function (t) { box(t, 84, 1, 0.18, sfxBus); box(t + 0.1, 91, 2, 0.18, sfxBus); },
+    // stardust: a rising pentatonic ladder that climbs with the combo
+    dust: function (t, o) {
+      var k = Math.min(((o && o.n) || 1) - 1, 11);
+      var m = 72 + [0, 2, 4, 7, 9][k % 5] + 12 * Math.floor(k / 5);
+      tone('sine', mtof(m), t, 0.11, 0.07, sfxBus, 0.002);
+      tone('triangle', mtof(m + 12), t, 0.06, 0.025, sfxBus, 0.002);
+    },
+    comboUp: function (t, o) { var b = 79 + Math.min(12, Math.floor(((o && o.n) || 10) / 10) * 2); [0, 4, 7].forEach(function (s, i) { box(t + i * 0.05, b + s, 1, 0.16, sfxBus); }); },
+    comboEnd: function (t) { tone('triangle', 440, t, 0.25, 0.06, sfxBus, 0.005, 220); },
+    fever: function (t) { [72, 76, 79, 84, 88, 91, 96].forEach(function (m, i) { box(t + i * 0.045, m, 1, 0.2, sfxBus); }); noise(t, 0.8, 0.08, sfxBus, 'bandpass', 2000, 9000, 1.5); }
   };
 
   function play(name, opts) {
@@ -305,8 +315,13 @@
     sfxBus.gain.setTargetAtTime(sfxVol, now, 0.05);
   }
 
+  function setMuted(m) {
+    muted = !!m;
+    if (ctx && master) master.gain.setTargetAtTime(muted ? 0 : 0.9, ctx.currentTime, 0.03);
+  }
+  function isMuted() { return muted; }
   function suspend() { try { if (ctx && ctx.state === 'running') ctx.suspend(); } catch (e) { /* ignore */ } }
   function resume() { try { if (ctx && unlocked && ctx.state === 'suspended') ctx.resume(); } catch (e) { /* ignore */ } }
 
-  DD.Audio = { unlock: unlock, ready: ready, music: music, play: play, tension: tension, setVolumes: setVolumes, suspend: suspend, resume: resume };
+  DD.Audio = { setMuted: setMuted, isMuted: isMuted, unlock: unlock, ready: ready, music: music, play: play, tension: tension, setVolumes: setVolumes, suspend: suspend, resume: resume };
 })();

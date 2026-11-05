@@ -36,6 +36,8 @@
     if (!$('hud').hidden) {
       var r = document.querySelector('.hud-top').getBoundingClientRect();
       top = Math.max(0, r.bottom - 14);
+      // keep the maze clear of the phone's home bar / gesture strip
+      bottom = 24;
       if (!$('dpad').hidden) bottom = $('dpad').getBoundingClientRect().height * 0.6;
     }
     Game.setView(vw, vh, dpr, top, bottom);
@@ -50,7 +52,7 @@
     UI.showHud(false);
     UI.show('scr-title');
     $('btn-play-label').textContent = t(Save.data.entered ? 'btn.continue' : 'btn.start');
-    $('btn-endless').hidden = !Save.data.storyCleared;
+    $('btn-endless').hidden = !Save.endlessOpen();
     Audio.music('dream');
   }
   function onPlay() {
@@ -161,7 +163,7 @@
 
   // ---------- stage select ----------
   function showSelect() {
-    if (Save.stage('3-5').clear && !Save.data.storyCleared) { ending(); return; }
+    if (Save.stage('3-10').clear && !Save.data.storyCleared) { ending(); return; }
     newFlow();
     stopStage();
     mode = 'scene';
@@ -188,16 +190,16 @@
     stopStage();
     var def = stageDef(id);
     if (!def) { showSelect(); return; }
-    if (id === '2-1' && Save.stage('1-5').clear && !Save.data.interludes['1']) { interlude(1, '2-1'); return; }
-    if (id === '3-1' && Save.stage('2-5').clear && !Save.data.interludes['2']) { interlude(2, '3-1'); return; }
+    if (id === '2-1' && Save.stage('1-10').clear && !Save.data.interludes['1']) { interlude(1, '2-1'); return; }
+    if (id === '3-1' && Save.stage('2-10').clear && !Save.data.interludes['2']) { interlude(2, '3-1'); return; }
     cur.stage = id; cur.endless = null; cur.def = def;
     mode = 'play';
     UI.hideScreens();
-    Game.start(def, { mode: 'story', chapter: +id[0], stage: id, hearts: 3, maxHearts: 3, onWin: onStageWin, onCaught: onStageCaught });
-    UI.showHud(true, { label: id + '  ' + t('st.' + id) });
+    Game.start(def, { mode: 'story', chapter: +id.split('-')[0], stage: id, hearts: 3, maxHearts: 3, onWin: onStageWin, onCaught: onStageCaught });
+    UI.showHud(true, { label: id });
     layoutGame();
     Audio.music('maze');
-    UI.card(t('st.' + id), t('sel.chapter', { n: +id[0] }) + ' · ' + id, 1100);
+    UI.card(id, t('sel.chapter', { n: +id.split('-')[0] }) + ' · ' + t('ch.' + id.split('-')[0]), 1000);
     showHints(def.hints || [], flowId);
   }
   function showHints(hints, id) {
@@ -229,11 +231,14 @@
       stars: [
         { on: true, label: t('star.escape') },
         { on: rec.after.marble, label: t('star.marble'), icon: 'marble' },
-        { on: rec.after.fast, label: t('star.fast', { t: DD.formatTime(s.par) }), icon: 'clock' }
+        { on: rec.after.unhurt, label: t('star.unhurt'), icon: 'heart' }
       ],
       stats: [
-        [t('res.time'), DD.formatTime(s.time), s.time <= s.par ? 'best' : ''],
-        [t('res.goal'), DD.formatTime(s.par)],
+        [t('res.score'), UI.fmt(s.score), s.score >= rec.after.score && s.score > (rec.before.score || 0) ? 'best' : ''],
+        [t('res.bestScore'), UI.fmt(rec.after.score)],
+        [t('res.time'), DD.formatTime(s.time)],
+        [t('res.dust'), s.dust + ' / ' + s.dustTotal, s.dust === s.dustTotal ? 'best' : ''],
+        [t('res.combo'), String(s.maxCombo)],
         [t('res.marble'), t(s.marble ? 'res.found' : 'res.missed'), s.marble ? 'best' : '']
       ],
       actions: actions
@@ -248,9 +253,9 @@
     });
   }
   function needsStory(id) {
-    if (id === '1-5' && !Save.data.interludes['1']) return 'i1';
-    if (id === '2-5' && !Save.data.interludes['2']) return 'i2';
-    if (id === '3-5' && !Save.data.storyCleared) return 'end';
+    if (id === '1-10' && !Save.data.interludes['1']) return 'i1';
+    if (id === '2-10' && !Save.data.interludes['2']) return 'i2';
+    if (id === '3-10' && !Save.data.storyCleared) return 'end';
     return null;
   }
   function caughtLine() { return '“' + t(['ll.c1', 'll.c2', 'll.c3'][Math.floor(Math.random() * 3)]) + '”'; }
@@ -292,6 +297,7 @@
     await UI.card(t('ch.' + (n + 1)), t('sel.chapter', { n: n + 1 }), 1600);
     if (!alive(id)) return;
     startStage(nextId);
+    if (n === 1) setTimeout(function () { if (alive(flowId)) UI.toast(t('toast.endless'), 3000); }, 2600);
   }
 
   async function ending() {
@@ -371,9 +377,9 @@
   async function startEndless() {
     var id = newFlow();
     stopStage();
-    if (!Save.data.storyCleared) return;
+    if (!Save.endlessOpen()) return;
     cur.stage = null;
-    cur.endless = { depth: 1, hearts: 3, floorHearts: 3, seed: (Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0, shards: 0, bestBefore: Save.data.endlessBest };
+    cur.endless = { depth: 1, hearts: 3, floorHearts: 3, seed: (Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0, shards: 0, score: 0, floorScore: 0, bestBefore: Save.data.endlessBest, bestScoreBefore: Save.data.endlessBestScore };
     if (!Save.data.endlessIntro) {
       mode = 'scene';
       UI.showHud(false);
@@ -410,7 +416,8 @@
     }
     E.floorHearts = E.hearts;
     mode = 'play';
-    Game.start(def, { mode: 'endless', depth: E.depth, hearts: E.hearts, maxHearts: 5, onWin: onFloorWin, onCaught: onFloorCaught });
+    if (!sameLayout) E.floorScore = E.score;
+    Game.start(def, { mode: 'endless', depth: E.depth, hearts: E.hearts, maxHearts: 5, score: E.floorScore, onWin: onFloorWin, onCaught: onFloorCaught });
     UI.showHud(true, { label: t('btn.endless') + ' · ' + t('hud.depth', { n: E.depth }) });
     layoutGame();
     Audio.music('maze');
@@ -421,6 +428,7 @@
     var E = cur.endless;
     if (!E) return;
     E.shards += s.shards;
+    E.score = s.score;
     E.hearts = Game.hearts();
     E.depth++;
     if ((E.depth - 1) % 5 === 0 && E.hearts < 5) { E.hearts++; UI.toast(t('toast.heart'), 1800); Audio.play('heart'); }
@@ -432,14 +440,20 @@
     endOfStageUI();
     if (!E) return;
     Audio.tension(0);
+    var g = Game.get();
+    if (g) E.score = g.score;
+    if (E.score > Save.data.endlessBestScore) { Save.data.endlessBestScore = E.score; Save.save(); }
     var best = Save.data.endlessBest;
     var isNew = E.depth > E.bestBefore;
+    var newScore = E.score > E.bestScoreBefore;
     UI.result({
       title: t('res.endTitle'), line: caughtLine(),
       stats: [
-        [t('res.depth', { n: E.depth }), isNew ? t('res.newBest') : '', isNew ? 'best' : ''],
+        [t('res.score'), UI.fmt(E.score), newScore ? 'best' : ''],
+        [t('res.depth', { n: E.depth }), isNew || newScore ? t('res.newBest') : '', isNew || newScore ? 'best' : ''],
         [t('res.shards', { n: E.shards }), ''],
-        [t('res.best', { n: best }), '']
+        [t('res.best', { n: best }), ''],
+        [t('res.bestScore'), UI.fmt(Save.data.endlessBestScore)]
       ],
       actions: [{ id: 'retry', label: t('btn.retry'), cls: 'primary' }, { id: 'map', label: t('btn.stages'), cls: 'ghost' }]
     }).then(function (a) {
@@ -483,6 +497,8 @@
     dt *= DD.timeScale || 1; // tests may fast-forward
     try {
       var G = Game.get();
+      var playing = mode === 'play' && G && !G.ended && !G.paused;
+      if (playing !== wakeWanted) { wakeWanted = playing; keepAwake(playing); }
       if (mode === 'play' && G) {
         Game.update(dt);
         Game.draw(ctx);
@@ -525,7 +541,7 @@
     UI.onLanguage = function () {
       if (!$('scr-select').hidden) UI.buildSelect(function (id) { startStage(id); }, startEndless);
       if (!$('scr-title').hidden) $('btn-play-label').textContent = t(Save.data.entered ? 'btn.continue' : 'btn.start');
-      if (mode === 'play' && cur.stage) $('hud-stage').textContent = cur.stage + '  ' + t('st.' + cur.stage);
+      if (mode === 'play' && cur.stage) $('hud-stage').textContent = cur.stage;
       if (mode === 'play' && cur.endless) $('hud-stage').textContent = t('btn.endless') + ' · ' + t('hud.depth', { n: cur.endless.depth });
     };
     UI.onReset = function () { UI.modal('modal-settings', false); showTitle(); };
@@ -563,9 +579,56 @@
       } else {
         Audio.resume();
         lastTs = 0;
+        wakeWanted = false; // the system drops the lock while hidden; ask again next frame
       }
     });
     window.addEventListener('pagehide', function () { Save.save(); });
+  }
+
+  // ---------- phone safety: back gestures, zoom, scrolling, screen sleep ----------
+  // Android's back button/gesture and iOS Safari's edge swipe would leave the page. A history entry
+  // catches them, and "back" pauses the game or closes the open panel instead.
+  function setupBackGuard() {
+    try {
+      if (globalThis.self !== globalThis.top) return; // inside a host page: leave its history alone
+      history.replaceState({ dd: 'base' }, '');
+      history.pushState({ dd: 'stay' }, '');
+      window.addEventListener('popstate', function () {
+        try { history.pushState({ dd: 'stay' }, ''); } catch (e) { /* ignore */ }
+        onBack();
+      });
+    } catch (e) { /* history unavailable */ }
+  }
+  function onBack() {
+    var m = UI.modalOpen();
+    if (m === 'modal-confirm') { $('confirm-no').click(); return; }
+    if (m === 'modal-settings') { $('set-close').click(); return; }
+    if (m === 'modal-pause') { resume(); return; }
+    if (canPause()) { pause(); return; }
+    if (!$('scr-select').hidden) { Audio.play('ui'); showTitle(); }
+  }
+  function setupTouchGuards() {
+    var stop = function (e) { e.preventDefault(); };
+    // iOS pinch-zoom and double-tap zoom
+    ['gesturestart', 'gesturechange', 'gestureend', 'dblclick'].forEach(function (ev) { document.addEventListener(ev, stop, { passive: false }); });
+    // No page scrolling, rubber-banding or pull-to-refresh, except inside lists and panels that scroll.
+    document.addEventListener('touchmove', function (e) {
+      if (e.touches && e.touches.length > 1) { e.preventDefault(); return; }
+      var el = e.target;
+      if (el && el.closest && el.closest('.scroll, .sheet, input')) return;
+      e.preventDefault();
+    }, { passive: false });
+  }
+  var wakeLock = null, wakeWanted = false;
+  function keepAwake(on) {
+    try {
+      if (on && !wakeLock && navigator.wakeLock && document.visibilityState === 'visible') {
+        navigator.wakeLock.request('screen').then(function (l) {
+          wakeLock = l;
+          l.addEventListener('release', function () { wakeLock = null; });
+        }).catch(function () { /* not allowed here */ });
+      } else if (!on && wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+    } catch (e) { /* ignore */ }
   }
 
   function registerSW() {
@@ -590,6 +653,9 @@
     document.body.classList.toggle('reduce-motion', !!Save.data.reduceMotion);
     Audio.setVolumes(Save.data.music, Save.data.sfx);
     bind();
+    setupTouchGuards();
+    setupBackGuard();
+    Audio.setMuted(!!Save.data.muted);
     resize();
     requestAnimationFrame(frame);
     showTitle();
@@ -599,7 +665,7 @@
   // Debug / test hooks (harmless in production).
   DD.Director = {
     startStage: function (id) { startStage(id); },
-    startEndless: function () { Save.data.storyCleared = true; startEndless(); },
+    startEndless: function () { Save.data.stages['1-10'] = Save.stage('1-10'); Save.data.stages['1-10'].clear = true; startEndless(); },
     showSelect: function () { showSelect(); },
     showTitle: function () { showTitle(); },
     ending: function () { ending(); },

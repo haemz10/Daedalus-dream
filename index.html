@@ -40,6 +40,7 @@
         <button type="button" class="pipe" id="btn-endless"><span data-i18n="btn.endless"></span></button>
         <button type="button" class="pipe ghost" id="btn-settings"><span data-i18n="btn.settings"></span></button>
       </div>
+      <button type="button" class="icon-btn mute-btn" id="btn-mute" data-i18n-aria="btn.sound" aria-pressed="true"><i class="ico" id="mute-ico"></i></button>
       <button type="button" class="lang-chip" id="btn-lang" data-i18n-aria="btn.lang"><i class="ico" data-ico="globe"></i><span id="lang-name">English</span></button>
     </section>
 
@@ -83,10 +84,10 @@
       <div class="hud-top">
         <button type="button" class="icon-btn" id="hud-pause" data-i18n-aria="btn.pause"><i class="ico" data-ico="pause"></i></button>
         <div class="hud-mid">
-          <div class="hud-stage" id="hud-stage"></div>
+          <div class="hud-stage"><span id="hud-stage"></span><span class="hud-score" id="hud-score">0</span></div>
           <div class="hud-row">
             <span class="hud-chip" id="hud-shards"></span>
-            <span class="hud-chip" id="hud-time"></span>
+            <span class="hud-chip" id="hud-dust"></span>
             <span class="hud-chip" id="hud-keys" hidden></span>
             <span class="hud-chip" id="hud-marble" hidden><i class="ico" data-ico="marble"></i></span>
           </div>
@@ -114,6 +115,7 @@
           <button type="button" class="pipe primary" id="p-resume"><span data-i18n="btn.resume"></span></button>
           <button type="button" class="pipe" id="p-restart"><span data-i18n="btn.restart"></span></button>
           <button type="button" class="pipe ghost" id="p-settings"><span data-i18n="btn.settings"></span></button>
+          <button type="button" class="pipe ghost" id="p-mute"><i class="ico" id="p-mute-ico"></i><span data-i18n="btn.sound"></span></button>
           <button type="button" class="pipe ghost" id="p-map"><span data-i18n="btn.stages"></span></button>
         </div>
       </div>

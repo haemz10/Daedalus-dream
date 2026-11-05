@@ -20,6 +20,9 @@
     key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="7.5" cy="12" r="3.5"/><path d="M11 12h10M17 12v3M20 12v2.5"/></svg>',
     lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
     shard: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z"/></svg>',
+    soundOn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>',
+    soundOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>',
+    dust: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="8" r="2.6"/><circle cx="16.5" cy="6.5" r="1.8"/><circle cx="12.5" cy="15" r="3"/><circle cx="19" cy="16.5" r="1.5"/></svg>',
     clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>'
   };
   function icon(name, cls) { return '<i class="ico' + (cls ? ' ' + cls : '') + '">' + (ICONS[name] || '') + '</i>'; }
@@ -192,6 +195,7 @@
       $('dpad').hidden = !DD.Save.data.dpad;
       $('hud-restart').classList.remove('pulse');
       $('hud-stage').textContent = opts && opts.label || '';
+      $('hud-score').textContent = '0';
     }
   }
   function setText(id, html, key) {
@@ -206,7 +210,9 @@
     setText('hud-shards', icon('shard') + got + '/' + total);
     var shardsEl = $('hud-shards');
     if (shardsEl.classList.contains('full') !== (got === total)) shardsEl.classList.toggle('full', got === total);
-    setText('hud-time', icon('clock') + DD.formatTime(G.time));
+    setText('hud-dust', icon('dust') + G.dustGot + '/' + G.dustTotal);
+    var sc = String(G.score).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    if (hudCache.score !== sc) { hudCache.score = sc; $('hud-score').textContent = sc; }
     var keys = DD.Level.keysHeld(st);
     if (L.keys.length) { $('hud-keys').hidden = false; setText('hud-keys', icon('key') + '×' + keys); }
     else $('hud-keys').hidden = true;
@@ -276,6 +282,7 @@
       modal('modal-result', true);
     });
   }
+  function fmt(n) { return String(Math.floor(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
   // ---------- settings ----------
@@ -363,24 +370,42 @@
           b.innerHTML = '<span class="num">' + id + '</span>' + icon('lock', 'lockico');
         } else {
           if (!s.clear && !firstOpen) { firstOpen = b; b.classList.add('next'); }
-          b.innerHTML = '<span class="num">' + id + '</span><span class="nm">' + esc(t('st.' + id)) + '</span>' +
-            '<span class="stars">' + icon('star', s.clear ? 'on' : '') + icon('marble', 'mb' + (s.marble ? ' on' : '')) + icon('clock', s.fast ? 'on' : '') + '</span>';
+          b.innerHTML = '<span class="num">' + id + '</span>' +
+            '<span class="stars">' + icon('star', s.clear ? 'on' : '') + icon('marble', 'mb' + (s.marble ? ' on' : '')) + icon('heart', 'hp' + (s.unhurt ? ' on' : '')) + '</span>' +
+            (s.score ? '<span class="nm">' + s.score + '</span>' : '');
           b.onclick = function () { DD.Audio.play('ui'); onPick(id); };
         }
-        b.setAttribute('aria-label', id + ' ' + t('st.' + id) + (open ? '' : ' — ' + t('sel.locked')));
+        b.setAttribute('aria-label', id + (open ? '' : ' — ' + t('sel.locked')));
         tiles.appendChild(b);
       });
       sec.appendChild(tiles);
       root.appendChild(sec);
     });
     var eb = $('sel-endless');
-    eb.disabled = !DD.Save.data.storyCleared;
-    $('sel-endless-sub').textContent = DD.Save.data.storyCleared ? t('sel.best', { n: DD.Save.data.endlessBest }) : t('sel.endlessLocked');
+    var eo = DD.Save.endlessOpen();
+    eb.disabled = !eo;
+    $('sel-endless-sub').textContent = eo ? t('sel.best', { n: DD.Save.data.endlessBest }) + (DD.Save.data.endlessBestScore ? ' · ' + t('res.bestScore') + ' ' + fmt(DD.Save.data.endlessBestScore) : '') : t('sel.endlessLocked');
     eb.onclick = function () { if (!eb.disabled) { DD.Audio.play('ui'); onEndless(); } };
     return firstOpen;
   }
 
   function fatal() { $('fatal').hidden = false; }
+  function syncMute() {
+    var off = !!DD.Save.data.muted;
+    $('mute-ico').innerHTML = ICONS[off ? 'soundOff' : 'soundOn'];
+    $('p-mute-ico').innerHTML = ICONS[off ? 'soundOff' : 'soundOn'];
+    $('btn-mute').classList.toggle('off', off);
+    $('btn-mute').setAttribute('aria-pressed', String(!off));
+    $('p-mute').classList.toggle('off', off);
+  }
+  function toggleMute() {
+    DD.Save.data.muted = !DD.Save.data.muted;
+    DD.Save.save();
+    DD.Audio.unlock();
+    DD.Audio.setMuted(DD.Save.data.muted);
+    if (!DD.Save.data.muted) DD.Audio.play('ui');
+    syncMute();
+  }
 
   function init() {
     fillIcons();
@@ -390,6 +415,9 @@
     $('btn-skip').addEventListener('click', function (e) { e.stopPropagation(); DD.Audio.play('ui'); if (skipFn) { var f = skipFn; skipFn = null; f(); } });
     bindSettings();
     applyLang();
+    $('btn-mute').addEventListener('click', toggleMute);
+    $('p-mute').addEventListener('click', toggleMute);
+    syncMute();
   }
 
   var UI = {
@@ -398,7 +426,7 @@
     showHud: showHud, updateHud: updateHud, pulseRestart: pulseRestart,
     modal: modal, confirm: confirmBox, result: result, openSettings: openSettings, buildSelect: buildSelect,
     advance: onAdvance, hasWaiter: function () { return !!waiter; }, modalOpen: function () { return openModal; },
-    icon: icon, fatal: fatal, sleep: sleep,
+    icon: icon, fatal: fatal, sleep: sleep, fmt: fmt,
     onLanguage: null, onReset: null
   };
   DD.UI = UI;

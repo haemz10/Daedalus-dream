@@ -4,7 +4,7 @@
   var DD = (globalThis.DD = globalThis.DD || {});
   var Lv = DD.Level, EK = DD.EK, R = DD.Render, C = R.C, opp = DD.opp, DX = DD.DX, DY = DD.DY;
   var TAU = Math.PI * 2;
-  var SPEED = 4.8;          // joints per second
+  var SPEED = 5.4;          // joints per second (x1.3 during FEVER)
   var BAR = 0.15;           // bar thickness in cells
   var GIRL_H = 0.8;
   var G = null;
@@ -37,8 +37,13 @@
       crumbleT: new Float32Array(L.edges.length).fill(-1), unlockT: new Float32Array(L.edges.length).fill(-1),
       hits: 0, shardsGot: 0, stuck: false, stuckCheckT: 0,
       ambientT: rnd(18, 30), ambient: null, lockInput: 0, catcher: null,
-      reduceMotion: !!(DD.Save && DD.Save.data.reduceMotion)
+      reduceMotion: !!(DD.Save && DD.Save.data.reduceMotion),
+      dust: new Uint8Array(L.N), dustTotal: 0, dustGot: 0,
+      combo: 0, comboT: 0, maxCombo: 0, comboPop: 0, nextFever: 30, fever: 0, score: opts.score || 0, popups: []
     };
+    for (var dn = 0; dn < L.N; dn++) {
+      if (L.node[dn] && (L.feat[dn] === 'o' || L.feat[dn] === 'E')) { G.dust[dn] = 1; G.dustTotal++; }
+    }
     L.rotators.forEach(function (r, i) { G.rotVis[i] = G.rotTarget[i] = r.o0; });
     discover();
     G.cam.s = baseScale();
@@ -71,7 +76,7 @@
       g.face = d; G.runDir = d; G.wantDir = -1;
       return;
     }
-    G.wantDir = d; G.wantT = 0.45;
+    G.wantDir = d; G.wantT = 0.9; // remembered for the next joint where that turn is possible
     if (!g.mv && G.lockInput <= 0) {
       decide();
       if (!g.mv) { bonk(d); G.wantDir = -1; }
@@ -196,10 +201,14 @@
       if (G.runDir < 0 && G.heldDir < 0) { G.wantDir = -1; return; }
     }
     if (G.runDir >= 0) {
+      // Keep running straight while the bar continues.
+      if (tryStart(G.runDir)) return;
+      // Blocked: take the corner if there is exactly one way on, otherwise stop and let the player choose.
       var exits = [];
       for (var d = 0; d < 4; d++) if (d !== opp(G.runDir) && Lv.canMove(L, st, st.pos, d) >= 0) exits.push(d);
       if (exits.length === 1 && tryStart(exits[0])) { G.runDir = exits[0]; return; }
       G.runDir = -1;
+      G.wantDir = -1;
     }
   }
   function moveUpdate(dt) {
@@ -209,7 +218,7 @@
     if (autoplay && !g.mv && !G.path.length) autoStep();
     if (!g.mv && G.lockInput <= 0) decide();
     if (g.mv) {
-      g.mv.t += dt * SPEED;
+      g.mv.t += dt * SPEED * (G.fever > 0 ? 1.3 : 1);
       g.walk = (g.walk < 0 ? 0 : g.walk) + dt * 15;
       var guard = 0;
       while (g.mv && g.mv.t >= 1 && guard++ < 4) {
@@ -228,9 +237,47 @@
     if (mv.reversed) { g.face = mv.d; return; } // she turned back: still on her joint, nothing happens
     var ev = [];
     var won = Lv.arrive(G.L, G.st, mv.e, mv.to, ev);
-    DD.Audio.play('step', { alt: (G.st.pos & 1) === 1 });
+    if (!collectDust(mv.to)) DD.Audio.play('step', { alt: (G.st.pos & 1) === 1 });
     handleEvents(ev);
     if (won) win();
+  }
+
+  // ---------- stardust, combo and FEVER ----------
+  function mult() { return Math.min(5, 1 + Math.floor(G.combo / 10)) * (G.fever > 0 ? 2 : 1); }
+  function addCombo() {
+    G.combo++;
+    G.comboT = G.fever > 0 ? 2.4 : 1.6;
+    G.comboPop = 1;
+    if (G.combo > G.maxCombo) G.maxCombo = G.combo;
+    if (G.combo % 10 === 0) { DD.Audio.play('comboUp', { n: G.combo }); DD.vibrate(12); }
+    if (G.combo >= G.nextFever) startFever();
+  }
+  function collectDust(n) {
+    if (!G.dust[n]) return false;
+    G.dust[n] = 0; G.dustGot++;
+    addCombo();
+    var pts = 10 * mult();
+    G.score += pts;
+    DD.Audio.play('dust', { n: G.combo });
+    G.particles.push({ x: nx(n), y: ny(n), vx: 0, vy: -0.6, g: 0, life: 0.5, max: 0.5, size: 0.05, color: G.fever > 0 ? '255,170,240' : '255,236,160', type: 'spark' });
+    if (G.dustGot === G.dustTotal) {
+      G.score += 1000;
+      popup(nx(n), ny(n) - 0.6, '+1000 ✧', '255,236,160');
+      DD.Audio.play('reveal');
+    }
+    return true;
+  }
+  function startFever() {
+    G.fever = 6;
+    G.nextFever = G.combo + 40;
+    DD.Audio.play('fever'); DD.vibrate([20, 30, 20, 30, 40]);
+    if (DD.UI) DD.UI.toast(DD.t('toast.fever'), 1500);
+    var p = girlPos();
+    burst(p.x, p.y - 0.3, 30, '255,150,230', 4);
+  }
+  function popup(x, y, text, color) {
+    G.popups.push({ x: x, y: y, text: text, color: color || '255,240,190', t: 0 });
+    if (G.popups.length > 12) G.popups.shift();
   }
 
   function handleEvents(ev) {
@@ -240,6 +287,8 @@
       switch (e.t) {
         case 'shard':
           G.shardsGot++;
+          G.score += 200 * mult(); addCombo();
+          popup(nx(e.n), ny(e.n) - 0.5, '+' + 200 * mult(), '200,235,255');
           DD.Audio.play('shard'); DD.vibrate(15);
           burst(nx(e.n), ny(e.n), 16, '200,235,255', 3);
           if (e.all) {
@@ -250,6 +299,7 @@
           }
           break;
         case 'marble':
+          G.score += 1000; popup(nx(e.n), ny(e.n) - 0.5, '+1000', '255,205,60');
           DD.Audio.play('marble'); DD.vibrate(20);
           burst(nx(e.n), ny(e.n), 20, '255,205,60', 3);
           if (DD.UI) DD.UI.toast(DD.t('toast.marble'), 1800);
@@ -393,6 +443,9 @@
   // ---------- ending a stage ----------
   function win() {
     G.ended = true; G.result = 'win'; G.endT = 0;
+    G.bonus = { clear: 1000, time: Math.max(0, Math.round((G.L.par - G.time) * 20)), unhurt: G.hits === 0 ? 500 : 0 };
+    G.score += G.bonus.clear + G.bonus.time + G.bonus.unhurt;
+    G.fever = 0;
     G.hands.length = 0;
     DD.Audio.play('clear'); DD.vibrate([20, 30, 60]);
     burst(nx(G.L.exit), ny(G.L.exit), 40, '255,240,170', 4);
@@ -407,7 +460,8 @@
   function stats() {
     return {
       time: G.time, par: G.L.par, marble: !!G.st.marble, hasMarble: G.L.marble >= 0,
-      hits: G.hits, hearts: G.hearts, shards: G.L.shards.length, result: G.result
+      hits: G.hits, hearts: G.hearts, shards: G.L.shards.length, result: G.result,
+      score: G.score, dust: G.dustGot, dustTotal: G.dustTotal, maxCombo: G.maxCombo, bonus: G.bonus || null
     };
   }
 
@@ -462,6 +516,21 @@
     for (var r = 0; r < G.rotVis.length; r++) G.rotVis[r] = DD.approach(G.rotVis[r], G.rotTarget[r], 16, dt);
     G.swVis = DD.approach(G.swVis, G.st.sw, 10, dt);
     G.bellRing = Math.max(0, G.bellRing - dt * 1.5);
+    G.comboPop = Math.max(0, G.comboPop - dt * 4);
+    if (!G.ended) {
+      if (G.combo > 0) {
+        G.comboT -= dt;
+        if (G.comboT <= 0) { if (G.combo >= 10) DD.Audio.play('comboEnd'); G.combo = 0; }
+      }
+      if (G.fever > 0) {
+        G.fever -= dt;
+        if (G.girl.mv && Math.random() < 0.6) {
+          var fp = girlPos();
+          G.particles.push({ x: fp.x + rnd(-0.1, 0.1), y: fp.y - 0.15 + rnd(-0.1, 0.1), vx: 0, vy: 0, g: 0, life: 0.45, max: 0.45, size: 0.06, color: 'hsl', hue: (G.time * 400) % 360, type: 'spark' });
+        }
+      }
+    }
+    for (var pi = G.popups.length - 1; pi >= 0; pi--) { G.popups[pi].t += dt; if (G.popups[pi].t > 1.1) G.popups.splice(pi, 1); }
     G.shake = Math.max(0, G.shake - dt);
     G.flash = Math.max(0, G.flash - dt * 1.6);
     if (G.exitOpen) G.exitT += dt;
@@ -573,6 +642,7 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawAmbient(ctx, t);
     drawPointers(ctx, t);
+    drawCombo(ctx, t);
     if (G.flash > 0) {
       ctx.fillStyle = 'rgba(' + G.flashColor + ',' + (G.flash * 0.45) + ')';
       ctx.fillRect(0, 0, view.w, view.h);
@@ -715,6 +785,21 @@
       var x = nx(r.node), y = ny(r.node);
       ctx.drawImage(spr, x - 0.17, y - 0.17, 0.34, 0.34);
     });
+    // stardust: round pale-blue pellets sitting on the joints (contrast against the yellow bars)
+    var tw = G.fever > 0;
+    ctx.beginPath();
+    for (var dy = vb.y0; dy <= vb.y1; dy++) for (var dx = vb.x0; dx <= vb.x1; dx++) {
+      var dn = dy * L.w + dx;
+      if (!G.dust[dn]) continue;
+      var dr = 0.085 + Math.sin(t * 4 + dx * 1.3 + dy * 0.7) * 0.012;
+      ctx.moveTo(dx + dr, dy - 0.02);
+      ctx.arc(dx, dy - 0.02, dr, 0, TAU);
+    }
+    ctx.lineWidth = 0.04;
+    ctx.strokeStyle = 'rgba(30,20,70,0.9)';
+    ctx.stroke();
+    ctx.fillStyle = tw ? 'hsl(' + ((t * 300) % 360) + ',100%,82%)' : '#d9f6ff';
+    ctx.fill();
     // start mat
     ctx.strokeStyle = 'rgba(200,180,255,0.45)'; ctx.lineWidth = 0.03;
     ctx.beginPath(); ctx.arc(nx(L.start), ny(L.start), 0.3, 0, TAU); ctx.stroke();
@@ -784,7 +869,7 @@
       if (G.discovered[n]) f.drawImage(soft, x - 0.95, y - 0.95, 1.9, 1.9);
     }
     var p = girlPos();
-    var r = L.light * 1.22 * (1 + Math.sin(t * 6.3) * 0.02 + Math.sin(t * 2.1) * 0.02);
+    var r = L.light * 1.22 * (G.fever > 0 ? 1.45 : 1) * (1 + Math.sin(t * 6.3) * 0.02 + Math.sin(t * 2.1) * 0.02);
     f.globalAlpha = 1;
     f.drawImage(R.sprites.light, p.x - r, p.y - 0.2 - r, r * 2, r * 2);
     if (G.exitOpen) { f.globalAlpha = 0.8; f.drawImage(soft, nx(L.exit) - 1.4, ny(L.exit) - 1.4, 2.8, 2.8); }
@@ -829,7 +914,7 @@
         ctx.fillStyle = 'rgba(' + q.color + ',' + a + ')';
         ctx.fillRect(q.x - q.size, q.y - q.size, q.size * 2, q.size * 2);
       } else {
-        ctx.fillStyle = 'rgba(' + q.color + ',' + a + ')';
+        ctx.fillStyle = q.color === 'hsl' ? 'hsla(' + q.hue + ',100%,72%,' + a + ')' : 'rgba(' + q.color + ',' + a + ')';
         ctx.beginPath(); ctx.arc(q.x, q.y, q.size, 0, TAU); ctx.fill();
       }
     });
@@ -851,6 +936,52 @@
     ctx.quadraticCurveTo(x, y + size * 0.36, x - size * 0.32, y + size * 0.22);
     ctx.fill();
     ctx.restore();
+  }
+
+  function drawCombo(ctx, t) {
+    var font = '800 {px}px Sniglet, Jua, "M PLUS Rounded 1c", "ZCOOL KuaiLe", system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    G.popups.forEach(function (p) {
+      var a = 1 - p.t / 1.1;
+      var sx = view.ox + p.x * view.s, sy = view.oy + (p.y - p.t * 0.8) * view.s;
+      ctx.font = font.replace('{px}', 16);
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,6,24,' + a * 0.8 + ')';
+      ctx.strokeText(p.text, sx, sy);
+      ctx.fillStyle = 'rgba(' + p.color + ',' + a + ')';
+      ctx.fillText(p.text, sx, sy);
+    });
+    if (G.combo >= 3 && !G.ended) {
+      var gp = girlPos();
+      var cx = DD.clamp(view.ox + gp.x * view.s, 64, view.w - 64), cy = Math.max(view.top + 24, view.oy + gp.y * view.s - view.s * 0.8 - 62);
+      var k = 1 + G.comboPop * 0.35;
+      var fade = Math.min(1, G.comboT / 0.5);
+      ctx.save();
+      ctx.translate(cx, cy); ctx.scale(k, k);
+      ctx.font = font.replace('{px}', 20);
+      ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(10,6,24,' + 0.85 * fade + ')';
+      var label = G.combo + ' combo';
+      ctx.strokeText(label, 0, 0);
+      ctx.fillStyle = G.fever > 0 ? 'hsla(' + ((t * 300) % 360) + ',100%,75%,' + fade + ')' : 'rgba(255,214,80,' + fade + ')';
+      ctx.fillText(label, 0, 0);
+      var m = mult();
+      if (m > 1) {
+        ctx.font = font.replace('{px}', 13);
+        ctx.strokeText('×' + m, 0, 17); ctx.fillText('×' + m, 0, 17);
+      }
+      // time left before the combo breaks
+      ctx.fillStyle = 'rgba(255,255,255,' + 0.25 * fade + ')';
+      ctx.fillRect(-26, 27, 52, 3);
+      ctx.fillStyle = 'rgba(255,214,80,' + 0.9 * fade + ')';
+      ctx.fillRect(-26, 27, 52 * DD.clamp(G.comboT / (G.fever > 0 ? 2.4 : 1.6), 0, 1), 3);
+      ctx.restore();
+    }
+    if (G.fever > 0) {
+      var hue = (t * 200) % 360, al = Math.min(1, G.fever) * (0.35 + 0.15 * Math.sin(t * 12));
+      var g1 = ctx.createLinearGradient(0, 0, 0, view.h);
+      g1.addColorStop(0, 'hsla(' + hue + ',100%,65%,' + al + ')'); g1.addColorStop(0.15, 'hsla(' + hue + ',100%,65%,0)');
+      g1.addColorStop(0.85, 'hsla(' + ((hue + 120) % 360) + ',100%,65%,0)'); g1.addColorStop(1, 'hsla(' + ((hue + 120) % 360) + ',100%,65%,' + al + ')');
+      ctx.fillStyle = g1; ctx.fillRect(0, 0, view.w, view.h);
+    }
   }
 
   // Arrows at the screen edge toward the open exit (and the last shards).

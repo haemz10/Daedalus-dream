@@ -9,43 +9,42 @@ const fs = require('fs');
 const path = require('path');
 const DD = require('./load.cjs')({ skip: ['levels.js', 'i18n.js'] });
 
-const L1 = 2.7, L2 = 2.4, L3 = 2.15;
+const L1 = 2.8, L2 = 2.5, L3 = 2.25;
+const B = (n, lo, hi) => ({ balloons: n, balloonSpeed: [lo, hi] });
+// Each stage is bigger than it looks on screen: plenty of stardust to run through, several shards to hunt.
 const recipes = {
-  '1-2': { w: 6, h: 8, shards: 4, loops: 0.12, marble: true, light: L1, target: 40, hints: ['hint.tapMove', 'hint.zoom', 'hint.marble'] },
-  '1-3': { w: 6, h: 7, shards: 3, loops: 0.1, marble: true, switches: 1, colorFrac: 0.3, require: { toggles: 2 }, light: L1, target: 40, hints: ['hint.switch'] },
-  '1-4': { w: 6, h: 8, shards: 4, loops: 0.2, marble: true, balloons: 2, balloonSpeed: [0.9, 1.1], light: L1, target: 45, hints: ['hint.balloon'] },
-  '1-5': { w: 7, h: 9, shards: 5, loops: 0.14, marble: true, switches: 1, colorFrac: 0.25, require: { toggles: 2 }, balloons: 2, balloonSpeed: [0.95, 1.15], light: L1, target: 60, hints: [] },
-  '2-1': { w: 6, h: 7, shards: 3, loops: 0.08, marble: true, rotators: 2, require: { rotations: 2 }, light: L2, target: 35, hints: ['hint.rotate'] },
-  '2-2': { w: 7, h: 8, shards: 4, loops: 0.1, marble: true, rotators: 2, switches: 1, colorFrac: 0.22, require: { rotations: 1, toggles: 1 }, light: L2, target: 50, hints: [] },
-  '2-3': { w: 7, h: 9, shards: 4, loops: 0.22, marble: true, switches: 1, colorFrac: 0.2, require: { toggles: 1 }, hands: { every: [7, 10], warn: 1.5 }, light: L2, target: 55, hints: ['hint.hand'] },
-  '2-4': { w: 7, h: 9, shards: 4, loops: 0.18, marble: true, oneway: 5, require: { oneways: 2 }, balloons: 1, hands: { every: [8, 12], warn: 1.5 }, light: L2, target: 55, hints: ['hint.oneway'] },
-  '2-5': { w: 7, h: 10, shards: 4, loops: 0.14, marble: true, lock: 1, rotators: 1, require: { unlocks: 1, rotations: 1 }, hands: { every: [7, 10], warn: 1.45 }, light: L2, target: 60, hints: ['hint.key'] },
-  '3-1': { w: 7, h: 8, shards: 4, loops: 0.2, marble: true, crumble: 4, require: { crumbles: 2 }, balloons: 1, light: L3, target: 50, hints: ['hint.crumble'] },
-  '3-2': { w: 7, h: 9, shards: 4, loops: 0.16, marble: true, portal: 1, oneway: 3, require: { portals: 1, oneways: 1 }, hands: { every: [6.5, 9.5], warn: 1.4 }, light: L3, target: 55, hints: ['hint.portal'] },
-  '3-3': { w: 8, h: 10, shards: 5, loops: 0.18, marble: true, crumble: 3, portal: 1, require: { crumbles: 1, portals: 1 }, balloons: 2, balloonSpeed: [1.0, 1.25], light: L3, target: 70, hints: [] },
-  '3-4': { w: 8, h: 11, shards: 5, loops: 0.16, marble: true, switches: 1, colorFrac: 0.18, rotators: 1, lock: 1, oneway: 3, require: { toggles: 1, rotations: 1, unlocks: 1 }, balloons: 2, balloonSpeed: [1.0, 1.25], hands: { every: [5.5, 8.5], warn: 1.35 }, light: L3, target: 80, hints: [] },
-  '3-5': { w: 9, h: 12, shards: 6, loops: 0.15, marble: true, switches: 1, colorFrac: 0.16, rotators: 1, crumble: 2, portal: 1, lock: 1, require: { toggles: 1, rotations: 1, portals: 1, unlocks: 1 }, seeds: 50, balloons: 3, balloonSpeed: [1.0, 1.3], hands: { every: [4.5, 7], warn: 1.25 }, light: L3, target: 100, hints: ['hint.final'] }
+  '1-1': { w: 6, h: 9, shards: 4, loops: 0.14, marble: true, light: L1, target: 45, hints: ['hint.move', 'hint.dust', 'hint.shards'] },
+  '1-2': { w: 6, h: 10, shards: 4, loops: 0.16, marble: true, light: L1, target: 55, hints: ['hint.tapMove', 'hint.zoom', 'hint.marble'] },
+  '1-3': { w: 7, h: 10, shards: 5, loops: 0.18, marble: true, ...B(1, 0.9, 1.05), light: L1, target: 60, hints: ['hint.balloon'] },
+  '1-4': { w: 7, h: 10, shards: 4, loops: 0.12, marble: true, switches: 1, colorFrac: 0.28, require: { toggles: 2 }, light: L1, target: 65, hints: ['hint.switch'] },
+  '1-5': { w: 7, h: 11, shards: 5, loops: 0.14, marble: true, switches: 1, colorFrac: 0.25, require: { toggles: 2 }, ...B(1, 0.95, 1.1), light: L1, target: 75 },
+  '1-6': { w: 7, h: 11, shards: 5, loops: 0.22, marble: true, ...B(2, 0.95, 1.15), light: L1, target: 75 },
+  '1-7': { w: 8, h: 11, shards: 5, loops: 0.16, marble: true, switches: 2, colorFrac: 0.24, require: { toggles: 3 }, ...B(2, 1.0, 1.15), light: L1, target: 85 },
+  '1-8': { w: 8, h: 12, shards: 6, loops: 0.18, marble: true, switches: 1, colorFrac: 0.22, require: { toggles: 2 }, ...B(2, 1.0, 1.2), light: L1, target: 95 },
+  '1-9': { w: 8, h: 12, shards: 6, loops: 0.2, marble: true, switches: 1, colorFrac: 0.26, require: { toggles: 3 }, ...B(3, 1.0, 1.2), light: L1, target: 100 },
+  '1-10': { w: 9, h: 13, shards: 6, loops: 0.2, marble: true, switches: 2, colorFrac: 0.24, require: { toggles: 3 }, ...B(2, 1.0, 1.2), hands: { every: [9, 12], warn: 1.55 }, light: L1, target: 110, hints: ['hint.hand'] },
+  '2-1': { w: 7, h: 10, shards: 4, loops: 0.1, marble: true, rotators: 2, require: { rotations: 3 }, light: L2, target: 65, hints: ['hint.rotate'] },
+  '2-2': { w: 7, h: 11, shards: 5, loops: 0.12, marble: true, rotators: 2, switches: 1, colorFrac: 0.2, require: { rotations: 2, toggles: 1 }, light: L2, target: 75 },
+  '2-3': { w: 8, h: 11, shards: 5, loops: 0.22, marble: true, switches: 1, colorFrac: 0.2, require: { toggles: 2 }, ...B(1, 1.0, 1.15), hands: { every: [7.5, 10], warn: 1.5 }, light: L2, target: 85 },
+  '2-4': { w: 8, h: 12, shards: 5, loops: 0.2, marble: true, oneway: 5, require: { oneways: 2 }, hands: { every: [8, 11], warn: 1.5 }, light: L2, target: 90, hints: ['hint.oneway'] },
+  '2-5': { w: 8, h: 12, shards: 5, loops: 0.14, marble: true, lock: 1, rotators: 1, require: { unlocks: 1, rotations: 1 }, ...B(1, 1.0, 1.15), light: L2, target: 95, hints: ['hint.key'] },
+  '2-6': { w: 8, h: 12, shards: 5, loops: 0.16, marble: true, rotators: 2, oneway: 3, require: { rotations: 2, oneways: 1 }, ...B(2, 1.0, 1.2), light: L2, target: 95 },
+  '2-7': { w: 9, h: 12, shards: 6, loops: 0.16, marble: true, lock: 1, switches: 1, colorFrac: 0.2, require: { unlocks: 1, toggles: 2 }, hands: { every: [7, 10], warn: 1.45 }, light: L2, target: 105 },
+  '2-8': { w: 9, h: 13, shards: 6, loops: 0.18, marble: true, oneway: 4, rotators: 1, require: { oneways: 1, rotations: 1 }, ...B(3, 1.05, 1.2), light: L2, target: 110 },
+  '2-9': { w: 9, h: 13, shards: 6, loops: 0.18, marble: true, lock: 1, oneway: 3, require: { unlocks: 1, oneways: 1 }, ...B(2, 1.05, 1.2), hands: { every: [6.5, 9], warn: 1.4 }, light: L2, target: 115 },
+  '2-10': { w: 9, h: 14, shards: 6, loops: 0.16, marble: true, rotators: 2, switches: 1, colorFrac: 0.18, lock: 1, require: { rotations: 2, toggles: 1, unlocks: 1 }, seeds: 80, ...B(2, 1.05, 1.25), hands: { every: [6, 8.5], warn: 1.4 }, light: L2, target: 125 },
+  '3-1': { w: 8, h: 11, shards: 5, loops: 0.22, marble: true, crumble: 4, require: { crumbles: 2 }, ...B(1, 1.0, 1.15), light: L3, target: 85, hints: ['hint.crumble'] },
+  '3-2': { w: 8, h: 12, shards: 5, loops: 0.18, marble: true, portal: 1, oneway: 3, require: { portals: 1, oneways: 1 }, hands: { every: [7, 9.5], warn: 1.4 }, light: L3, target: 95, hints: ['hint.portal'] },
+  '3-3': { w: 8, h: 12, shards: 5, loops: 0.2, marble: true, crumble: 3, portal: 1, require: { crumbles: 1, portals: 1 }, ...B(2, 1.05, 1.25), light: L3, target: 100 },
+  '3-4': { w: 9, h: 12, shards: 6, loops: 0.2, marble: true, crumble: 3, switches: 1, colorFrac: 0.18, require: { crumbles: 1, toggles: 2 }, hands: { every: [6, 8.5], warn: 1.35 }, light: L3, target: 110 },
+  '3-5': { w: 9, h: 13, shards: 6, loops: 0.16, marble: true, portal: 1, lock: 1, rotators: 1, require: { portals: 1, unlocks: 1, rotations: 1 }, seeds: 80, ...B(2, 1.05, 1.25), light: L3, target: 115 },
+  '3-6': { w: 9, h: 13, shards: 6, loops: 0.2, marble: true, crumble: 3, oneway: 3, require: { crumbles: 1, oneways: 1 }, ...B(2, 1.05, 1.25), hands: { every: [6, 8], warn: 1.35 }, light: L3, target: 120 },
+  '3-7': { w: 9, h: 14, shards: 6, loops: 0.16, marble: true, switches: 1, colorFrac: 0.18, rotators: 1, portal: 1, require: { toggles: 1, rotations: 1, portals: 1 }, seeds: 80, hands: { every: [5.5, 8], warn: 1.3 }, light: L3, target: 125 },
+  '3-8': { w: 10, h: 14, shards: 6, loops: 0.18, marble: true, crumble: 2, lock: 1, portal: 1, require: { crumbles: 1, unlocks: 1, portals: 1 }, seeds: 80, ...B(3, 1.05, 1.3), light: L3, target: 130 },
+  '3-9': { w: 10, h: 15, shards: 6, loops: 0.18, marble: true, switches: 1, colorFrac: 0.16, oneway: 3, crumble: 2, lock: 1, require: { toggles: 1, oneways: 1, unlocks: 1 }, seeds: 60, ...B(3, 1.1, 1.3), hands: { every: [5.5, 7.5], warn: 1.3 }, light: L3, target: 140 },
+  '3-10': { w: 10, h: 16, shards: 6, loops: 0.16, marble: true, switches: 1, colorFrac: 0.16, rotators: 1, crumble: 2, portal: 1, lock: 1, require: { toggles: 1, rotations: 1, portals: 1, unlocks: 1 }, seeds: 50, ...B(3, 1.1, 1.3), hands: { every: [4.5, 6.5], warn: 1.25 }, light: L3, target: 150, hints: ['hint.final'] }
 };
-
-const handmade = {
-  '1-1': {
-    id: '1-1', light: L1, hints: ['hint.move', 'hint.shards'],
-    map: [
-      '*-o-o o-E',
-      '|   | | |',
-      'o o-o o o',
-      '| |   | |',
-      'o-o o-o-o',
-      '  | |   |',
-      'o-o-o o-*',
-      '|     |  ',
-      'o o-o-o-o',
-      '| |     |',
-      'S-o M-*-o'
-    ],
-    rot: []
-  }
-};
+const handmade = {};
 
 function score(def, r) {
   const u = def.usage || {};
@@ -68,7 +67,7 @@ function curate(id) {
   }
   if (!best) throw new Error('no layout for ' + id);
   const d = best.def;
-  const out = { id, light: r.light, hints: r.hints, map: d.map, rot: d.rot };
+  const out = { id, light: r.light, hints: r.hints || [], map: d.map, rot: d.rot };
   if (d.balloons) out.balloons = d.balloons;
   if (r.hands) out.hands = r.hands;
   console.error(id, 'seed', best.seed, 'moves', d.optimal, 'par', d.par, 'usage', JSON.stringify(d.usage));
@@ -84,7 +83,7 @@ function main() {
     require(file);
     for (const s of globalThis.DD.STAGES) existing[s.id] = s;
   }
-  const ids = ['1-1', '1-2', '1-3', '1-4', '1-5', '2-1', '2-2', '2-3', '2-4', '2-5', '3-1', '3-2', '3-3', '3-4', '3-5'];
+  const ids = Object.keys(recipes);
   const stages = ids.map((id) => {
     if (handmade[id]) return handmade[id];
     if (only.length && !only.includes(id) && existing[id]) return existing[id];
@@ -109,7 +108,7 @@ function main() {
     lines.push('    }');
     return lines.join('\n');
   }).join(',\n');
-  const src = `/* Daedalus Dream — the fifteen story stages (drafted by tools/curate.cjs, verified by tools/verify.cjs).
+  const src = `/* Daedalus Dream — the thirty story stages (drafted by tools/curate.cjs, verified by tools/verify.cjs).
  * See src/level.js for the map legend. Chapter = first digit.
  */
 (function () {
@@ -119,9 +118,9 @@ function main() {
 ${body}
   ];
   DD.CHAPTERS = [
-    { n: 1, stages: ['1-1', '1-2', '1-3', '1-4', '1-5'] },
-    { n: 2, stages: ['2-1', '2-2', '2-3', '2-4', '2-5'] },
-    { n: 3, stages: ['3-1', '3-2', '3-3', '3-4', '3-5'] }
+    { n: 1, stages: ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9', '1-10'] },
+    { n: 2, stages: ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10'] },
+    { n: 3, stages: ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9', '3-10'] }
   ];
 })();
 `;

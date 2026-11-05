@@ -25,7 +25,7 @@ const VIEWS = [
     await page.waitForSelector('#scr-title:not([hidden])');
     await page.waitForTimeout(600);
     await page.screenshot({ path: `${OUT}/${name}-title.png` });
-    await page.evaluate(() => { DD.Save.data.entered = true; DD.Save.data.seenPrologue = true; DD.Save.data.stages['1-1'] = { clear: true, marble: true, fast: false, best: 20 }; DD.Director.showSelect(); });
+    await page.evaluate(() => { DD.Save.data.entered = true; DD.Save.data.seenPrologue = true; DD.Save.data.stages['1-1'] = { clear: true, marble: true, unhurt: false, best: 20, score: 4200 }; DD.Director.showSelect(); });
     await page.waitForTimeout(500);
     await page.screenshot({ path: `${OUT}/${name}-select.png` });
     await page.evaluate(() => DD.Director.startStage('2-2'));
