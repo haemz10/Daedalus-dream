@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Daedalus Dream</title>
+<meta name="description" content="A little girl keeps dreaming of a bright yellow jungle-gym maze. There is a way in, and no way out. A puzzle escape arcade game.">
+<meta name="theme-color" content="#0b0818">
+<meta name="color-scheme" content="dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daedalus Dream">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sniglet:wght@400;800&family=Jua&family=M+PLUS+Rounded+1c:wght@500;800&family=ZCOOL+KuaiLe&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!--APP-->
+<div id="app">
+  <canvas id="stage" aria-hidden="true"></canvas>
+  <div id="ui">
+
+    <section id="scr-boot" class="screen center">
+      <p class="boot-text" data-i18n="ui.loading">Falling asleep…</p>
+    </section>
+
+    <section id="scr-title" class="screen" hidden>
+      <div class="title-wrap">
+        <h1 class="game-title" data-i18n="game.title">Daedalus Dream</h1>
+        <p class="tagline" data-i18n="game.tagline"></p>
+      </div>
+      <div class="menu">
+        <button type="button" class="pipe primary" id="btn-play"><span id="btn-play-label" data-i18n="btn.start"></span></button>
+        <button type="button" class="pipe" id="btn-endless"><span data-i18n="btn.endless"></span></button>
+        <button type="button" class="pipe ghost" id="btn-settings"><span data-i18n="btn.settings"></span></button>
+      </div>
+      <button type="button" class="lang-chip" id="btn-lang" data-i18n-aria="btn.lang"><i class="ico" data-ico="globe"></i><span id="lang-name">English</span></button>
+    </section>
+
+    <section id="scr-narr" class="screen tappable" hidden>
+      <p class="narr-text" id="narr-text"></p>
+      <span class="tap-hint" data-i18n="ui.tap"></span>
+    </section>
+
+    <section id="scr-dialog" class="screen tappable" hidden>
+      <div class="dialog" id="dialog">
+        <div class="who" id="dlg-who"></div>
+        <p class="say" id="dlg-text"></p>
+        <span class="more" aria-hidden="true"></span>
+      </div>
+    </section>
+
+    <section id="scr-choice" class="screen" hidden>
+      <div class="choices">
+        <button type="button" class="pipe primary" id="ch-enter"><span data-i18n="choice.enter"></span></button>
+        <button type="button" class="pipe ghost" id="ch-wake"><span id="ch-wake-label"></span></button>
+      </div>
+    </section>
+
+    <button type="button" id="btn-skip" class="skip" hidden><span data-i18n="btn.skip"></span><i class="ico" data-ico="ff"></i></button>
+
+    <section id="scr-select" class="screen scroll" hidden>
+      <header class="bar">
+        <button type="button" class="icon-btn" id="sel-back" data-i18n-aria="btn.back"><i class="ico" data-ico="back"></i></button>
+        <h2 data-i18n="sel.title"></h2>
+        <button type="button" class="icon-btn" id="sel-settings" data-i18n-aria="btn.settings"><i class="ico" data-ico="gear"></i></button>
+      </header>
+      <div class="totals"><span id="tot-stars"></span><span id="tot-marbles"></span></div>
+      <div class="chapters" id="chapters"></div>
+      <button type="button" class="endless-card" id="sel-endless">
+        <span class="ec-title" data-i18n="btn.endless"></span>
+        <span class="ec-sub" id="sel-endless-sub"></span>
+      </button>
+    </section>
+
+    <div id="hud" hidden>
+      <div class="hud-top">
+        <button type="button" class="icon-btn" id="hud-pause" data-i18n-aria="btn.pause"><i class="ico" data-ico="pause"></i></button>
+        <div class="hud-mid">
+          <div class="hud-stage" id="hud-stage"></div>
+          <div class="hud-row">
+            <span class="hud-chip" id="hud-shards"></span>
+            <span class="hud-chip" id="hud-time"></span>
+            <span class="hud-chip" id="hud-keys" hidden></span>
+            <span class="hud-chip" id="hud-marble" hidden><i class="ico" data-ico="marble"></i></span>
+          </div>
+        </div>
+        <div class="hud-hearts" id="hud-hearts"></div>
+      </div>
+      <div class="hud-tools">
+        <button type="button" class="icon-btn" id="hud-zoom" data-i18n-aria="btn.zoom"><i class="ico" data-ico="zoom"></i></button>
+        <button type="button" class="icon-btn" id="hud-restart" data-i18n-aria="btn.restart"><i class="ico" data-ico="restart"></i></button>
+      </div>
+      <div class="dpad" id="dpad" hidden>
+        <button type="button" class="dp up" data-dir="0" aria-label="Up"><i class="ico" data-ico="arrow"></i></button>
+        <button type="button" class="dp right" data-dir="1" aria-label="Right"><i class="ico" data-ico="arrow"></i></button>
+        <button type="button" class="dp down" data-dir="2" aria-label="Down"><i class="ico" data-ico="arrow"></i></button>
+        <button type="button" class="dp left" data-dir="3" aria-label="Left"><i class="ico" data-ico="arrow"></i></button>
+      </div>
+    </div>
+
+    <div id="card" class="card" hidden><div class="card-sub" id="card-sub"></div><div class="card-title" id="card-title"></div></div>
+
+    <div id="modal-pause" class="modal" hidden>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+        <h2 id="pause-title" data-i18n="hud.paused"></h2>
+        <div class="stack">
+          <button type="button" class="pipe primary" id="p-resume"><span data-i18n="btn.resume"></span></button>
+          <button type="button" class="pipe" id="p-restart"><span data-i18n="btn.restart"></span></button>
+          <button type="button" class="pipe ghost" id="p-settings"><span data-i18n="btn.settings"></span></button>
+          <button type="button" class="pipe ghost" id="p-map"><span data-i18n="btn.stages"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-result" class="modal" hidden>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="res-title">
+        <h2 id="res-title"></h2>
+        <p class="res-line" id="res-line"></p>
+        <div class="res-stars" id="res-stars"></div>
+        <dl class="res-stats" id="res-stats"></dl>
+        <div class="stack" id="res-actions"></div>
+      </div>
+    </div>
+
+    <div id="modal-settings" class="modal" hidden>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="set-title">
+        <h2 id="set-title" data-i18n="set.title"></h2>
+        <div class="set-group">
+          <div class="set-label" data-i18n="set.language"></div>
+          <div class="lang-grid" id="lang-grid"></div>
+        </div>
+        <label class="set-row" for="set-music"><span data-i18n="set.music"></span><input type="range" id="set-music" min="0" max="100" step="5"></label>
+        <label class="set-row" for="set-sfx"><span data-i18n="set.sfx"></span><input type="range" id="set-sfx" min="0" max="100" step="5"></label>
+        <label class="set-row" for="set-vibrate"><span data-i18n="set.vibrate"></span><input type="checkbox" class="switch" id="set-vibrate"></label>
+        <label class="set-row" for="set-dpad"><span data-i18n="set.dpad"></span><input type="checkbox" class="switch" id="set-dpad"></label>
+        <label class="set-row" for="set-motion"><span data-i18n="set.motion"></span><input type="checkbox" class="switch" id="set-motion"></label>
+        <button type="button" class="text-btn danger" id="set-reset"><span data-i18n="set.reset"></span></button>
+        <button type="button" class="pipe primary" id="set-close"><span data-i18n="btn.close"></span></button>
+        <p class="version" id="version"></p>
+      </div>
+    </div>
+
+    <div id="modal-confirm" class="modal" hidden>
+      <div class="sheet small" role="alertdialog" aria-modal="true" aria-labelledby="confirm-text">
+        <p id="confirm-text"></p>
+        <div class="row">
+          <button type="button" class="pipe ghost" id="confirm-no"><span data-i18n="btn.cancel"></span></button>
+          <button type="button" class="pipe danger" id="confirm-yes"><span data-i18n="btn.erase"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="fatal" class="fatal" hidden><p data-i18n="ui.error"></p></div>
+  </div>
+</div>
+<!--/APP-->
+<script src="src/util.js"></script>
+<script src="src/i18n.js"></script>
+<script src="src/level.js"></script>
+<script src="src/solver.js"></script>
+<script src="src/generator.js"></script>
+<script src="src/levels.js"></script>
+<script src="src/save.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/render.js"></script>
+<script src="src/scenes.js"></script>
+<script src="src/game.js"></script>
+<script src="src/ui.js"></script>
+<script src="src/input.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
