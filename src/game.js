@@ -4,7 +4,9 @@
   var DD = (globalThis.DD = globalThis.DD || {});
   var Lv = DD.Level, EK = DD.EK, R = DD.Render, C = R.C, opp = DD.opp, DX = DD.DX, DY = DD.DY;
   var TAU = Math.PI * 2;
-  var SPEED = 5.4;          // joints per second (x1.3 during FEVER)
+  // Running speed in joints per second. ~0.3 s per joint leaves time to see a corner coming and swipe,
+  // like classic maze arcades; she eases in from a stop, and the speed setting scales it (0.8 / 1 / 1.25).
+  var SPEED = 3.3;
   var BAR = 0.15;           // bar thickness in cells
   var GIRL_H = 0.8;
   var G = null;
@@ -26,7 +28,7 @@
       hearts: opts.hearts || 3, maxHearts: opts.maxHearts || 3,
       discovered: new Uint8Array(L.N),
       balloons: L.balloons.map(function (b) {
-        return { ax: b.ax, ay: b.ay, bx: b.bx, by: b.by, speed: b.speed, phase: b.phase, len: Math.hypot(b.bx - b.ax, b.by - b.ay), x: b.ax, y: b.ay, hitT: 0 };
+        return { ax: b.ax, ay: b.ay, bx: b.bx, by: b.by, speed: b.speed * 0.85, phase: b.phase, len: Math.hypot(b.bx - b.ax, b.by - b.ay), x: b.ax, y: b.ay, hitT: 0 };
       }),
       hands: [], handTimer: L.hands ? rnd(L.hands.every[0], L.hands.every[1]) * 0.7 + 2 : 0,
       particles: [], exitOpen: false, exitT: 0,
@@ -76,7 +78,15 @@
       g.face = d; G.runDir = d; G.wantDir = -1;
       return;
     }
-    G.wantDir = d; G.wantT = 0.9; // remembered for the next joint where that turn is possible
+    // Swiped a moment too late? If she has only just left a joint where that turn was possible,
+    // step back onto it and take the turn (cornering grace, as in classic maze games).
+    if (g.mv && !g.mv.reversed && g.mv.t < 0.28 && d !== g.mv.d && G.L.edges[g.mv.e].kind !== EK.ONEWAY &&
+        Lv.canMove(G.L, G.st, g.mv.from, d) >= 0) {
+      g.mv = { from: g.mv.to, to: g.mv.from, d: opp(g.mv.d), e: g.mv.e, t: 1 - g.mv.t, reversed: true };
+      G.runDir = -1; G.wantDir = d; G.wantT = 1.2;
+      return;
+    }
+    G.wantDir = d; G.wantT = 1.2; // remembered for the next joint where that turn is possible
     if (!g.mv && G.lockInput <= 0) {
       decide();
       if (!g.mv) { bonk(d); G.wantDir = -1; }
@@ -218,7 +228,10 @@
     if (autoplay && !g.mv && !G.path.length) autoStep();
     if (!g.mv && G.lockInput <= 0) decide();
     if (g.mv) {
-      g.mv.t += dt * SPEED * (G.fever > 0 ? 1.3 : 1);
+      g.runT = (g.runT || 0) + dt;
+      var ease = 0.75 + 0.25 * Math.min(1, g.runT / 0.5);
+      var pref = DD.Save && DD.Save.data.speed ? DD.Save.data.speed : 1;
+      g.mv.t += dt * SPEED * pref * ease * (G.fever > 0 ? 1.25 : 1);
       g.walk = (g.walk < 0 ? 0 : g.walk) + dt * 15;
       var guard = 0;
       while (g.mv && g.mv.t >= 1 && guard++ < 4) {
@@ -230,7 +243,7 @@
         if (G.lockInput <= 0) decide();
         if (g.mv) g.mv.t = Math.min(over, 0.9);
       }
-    } else g.walk = -1;
+    } else { g.walk = -1; g.runT = 0; }
   }
   function arrive(mv) {
     var g = G.girl;
@@ -637,6 +650,7 @@
       ctx.globalAlpha = 1;
     }
     drawHands(ctx, t);
+    drawQueuedTurn(ctx, t);
     drawParticles(ctx);
     // screen space overlays
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -849,6 +863,17 @@
     ctx.restore();
   }
 
+  function drawQueuedTurn(ctx, t) {
+    var g = G.girl;
+    if (G.ended || G.wantDir < 0 || !g.mv || G.wantDir === g.mv.d) return;
+    var p = girlPos(), d = G.wantDir, k = 0.75 + 0.25 * Math.sin(t * 14);
+    var x = p.x + DX[d] * 0.42, y = p.y - 0.3 + DY[d] * 0.42;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(d * Math.PI / 2); ctx.scale(k, k);
+    ctx.fillStyle = 'rgba(255,214,80,0.95)'; ctx.strokeStyle = 'rgba(20,10,40,0.9)'; ctx.lineWidth = 0.03;
+    ctx.beginPath(); ctx.moveTo(0, -0.14); ctx.lineTo(0.12, 0.04); ctx.lineTo(0, -0.02); ctx.lineTo(-0.12, 0.04); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
   function drawFog(ctx, vb, t) {
     var L = G.L, dpr = view.dpr, k = 0.5;
     var W = Math.max(1, Math.ceil(view.w * dpr * k)), H = Math.max(1, Math.ceil(view.h * dpr * k));

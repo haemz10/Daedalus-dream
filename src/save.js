@@ -11,7 +11,7 @@
     return {
       v: 1,
       lang: 'en',
-      music: 0.6, sfx: 0.8, vibrate: true, dpad: false, reduceMotion: reduce, muted: false,
+      music: 0.6, sfx: 0.8, vibrate: true, dpad: false, reduceMotion: reduce, muted: false, speed: 1,
       seenPrologue: false, refusals: 0, entered: false,
       stages: {},            // id -> { clear, marble, fast, best }
       seenHints: {},
@@ -29,6 +29,7 @@
     ['vibrate', 'dpad', 'reduceMotion', 'muted', 'seenPrologue', 'entered', 'storyCleared', 'trueEnding', 'endlessIntro'].forEach(function (k) {
       if (typeof d[k] === 'boolean') out[k] = d[k];
     });
+    if (d.speed === 0.8 || d.speed === 1 || d.speed === 1.25) out.speed = d.speed;
     if (typeof d.lang === 'string' && DD.I18N && DD.I18N[d.lang]) out.lang = d.lang;
     if (typeof d.refusals === 'number' && isFinite(d.refusals)) out.refusals = Math.max(0, Math.min(9999, d.refusals | 0));
     if (typeof d.endlessBest === 'number' && isFinite(d.endlessBest)) out.endlessBest = Math.max(0, d.endlessBest | 0);
@@ -65,7 +66,7 @@
     },
     save: function () { DD.store.set(KEY, JSON.stringify(Save.data)); },
     reset: function () {
-      var keep = { lang: Save.data.lang, music: Save.data.music, sfx: Save.data.sfx, vibrate: Save.data.vibrate, dpad: Save.data.dpad, reduceMotion: Save.data.reduceMotion };
+      var keep = { speed: Save.data.speed, muted: Save.data.muted, lang: Save.data.lang, music: Save.data.music, sfx: Save.data.sfx, vibrate: Save.data.vibrate, dpad: Save.data.dpad, reduceMotion: Save.data.reduceMotion };
       Save.data = Object.assign(defaults(), keep);
       Save.save();
     },

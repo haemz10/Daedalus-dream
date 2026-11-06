@@ -92,8 +92,7 @@ const check = (ok, msg) => { console.log((ok ? '  ✓ ' : '  ✗ ') + msg); if (
     return { sx: w / 2 - G.cam.x * G.cam.s + x * G.cam.s, sy: top + (h - top) / 2 - G.cam.y * G.cam.s + y * G.cam.s };
   }, target);
   await page.touchscreen.tap(tp.sx, tp.sy);
-  await page.waitForTimeout(2500);
-  const arrived = await page.evaluate((n) => DD.Game.get().st.pos === n, target);
+  const arrived = await page.waitForFunction((n) => DD.Game.get().st.pos === n, target, { timeout: 10000 }).then(() => true).catch(() => false);
   check(target >= 0 && arrived, 'tapping a seen joint walks the girl there');
 
   // ---- keyboard ----

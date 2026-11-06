@@ -6,7 +6,7 @@
   var DD = (globalThis.DD = globalThis.DD || {});
   DD.STAGES = [
     {
-      id: '1-1', light: 2.8, par: 35, hints: ['hint.move','hint.dust','hint.shards'],
+      id: '1-1', light: 2.8, par: 40, hints: ['hint.move','hint.dust','hint.shards'],
       map: [
         '*-o-o *-o-o',
         '    |   | |',
@@ -29,7 +29,7 @@
       rot: []
     },
     {
-      id: '1-2', light: 2.8, par: 40, hints: ['hint.tapMove','hint.zoom','hint.marble'],
+      id: '1-2', light: 2.8, par: 45, hints: ['hint.tapMove','hint.zoom','hint.marble'],
       map: [
         'E-o-o-o-o-o',
         '| |     | |',
@@ -54,7 +54,7 @@
       rot: []
     },
     {
-      id: '1-3', light: 2.8, par: 40, hints: ['hint.balloon'],
+      id: '1-3', light: 2.8, par: 50, hints: ['hint.balloon'],
       map: [
         'o-o-o-o-o-E-o',
         '  |   | | |  ',
@@ -80,7 +80,7 @@
       balloons: [{'a':[5,1],'b':[2,1],'speed':1,'phase':0.46}]
     },
     {
-      id: '1-4', light: 2.8, par: 45, hints: ['hint.switch'],
+      id: '1-4', light: 2.8, par: 55, hints: ['hint.switch'],
       map: [
         'o-o-o-o-o-o-o',
         '| |   | |   |',
@@ -105,7 +105,7 @@
       rot: []
     },
     {
-      id: '1-5', light: 2.8, par: 45, hints: [],
+      id: '1-5', light: 2.8, par: 55, hints: [],
       map: [
         'o-o-op* opo-o',
         '    |   |   |',
@@ -133,7 +133,7 @@
       balloons: [{'a':[0,7],'b':[6,7],'speed':0.98,'phase':0.54}]
     },
     {
-      id: '1-6', light: 2.8, par: 50, hints: [],
+      id: '1-6', light: 2.8, par: 55, hints: [],
       map: [
         'o-o-o-o o-o-*',
         '|     | | |  ',
@@ -161,7 +161,7 @@
       balloons: [{'a':[0,4],'b':[3,4],'speed':1.08,'phase':0.37},{'a':[0,3],'b':[0,0],'speed':1.03,'phase':0.89}]
     },
     {
-      id: '1-7', light: 2.8, par: 55, hints: [],
+      id: '1-7', light: 2.8, par: 60, hints: [],
       map: [
         'opoco-o-o-o-opE',
         '|         |   |',
@@ -189,7 +189,7 @@
       balloons: [{'a':[7,5],'b':[3,5],'speed':1.03,'phase':0.27},{'a':[1,0],'b':[1,9],'speed':1.07,'phase':0.92}]
     },
     {
-      id: '1-8', light: 2.8, par: 60, hints: [],
+      id: '1-8', light: 2.8, par: 70, hints: [],
       map: [
         'o-o-o-o oco-o-o',
         '| | | | |   | |',
@@ -219,7 +219,7 @@
       balloons: [{'a':[6,6],'b':[0,6],'speed':1.13,'phase':0.52},{'a':[3,6],'b':[3,9],'speed':1.11,'phase':0.63}]
     },
     {
-      id: '1-9', light: 2.8, par: 60, hints: [],
+      id: '1-9', light: 2.8, par: 70, hints: [],
       map: [
         'Eco-o M o *co-o',
         '  | p p |   | |',
@@ -249,7 +249,7 @@
       balloons: [{'a':[5,1],'b':[5,8],'speed':1.02,'phase':0.3},{'a':[4,9],'b':[4,6],'speed':1.15,'phase':0.41},{'a':[5,0],'b':[0,0],'speed':1.16,'phase':0.53}]
     },
     {
-      id: '1-10', light: 2.8, par: 65, hints: ['hint.hand'],
+      id: '1-10', light: 2.8, par: 75, hints: ['hint.hand'],
       map: [
         'M o-o o o-o-o-opo',
         '| | | | | p   c |',
@@ -282,7 +282,7 @@
       hands: {'every':[9,12],'warn':1.55}
     },
     {
-      id: '2-1', light: 2.5, par: 45, hints: ['hint.rotate'],
+      id: '2-1', light: 2.5, par: 55, hints: ['hint.rotate'],
       map: [
         'o-o-o-o-o-o-E',
         '| |       |  ',
@@ -307,7 +307,7 @@
       rot: [['L',2],['T',1]]
     },
     {
-      id: '2-2', light: 2.5, par: 60, hints: [],
+      id: '2-2', light: 2.5, par: 70, hints: [],
       map: [
         'o-o E o o-o-o',
         '|   | |   | |',
@@ -334,7 +334,7 @@
       rot: [['I',0],['L',1]]
     },
     {
-      id: '2-3', light: 2.5, par: 50, hints: [],
+      id: '2-3', light: 2.5, par: 60, hints: [],
       map: [
         'o-o-o-opo-o o-o',
         '  | |     | | |',
@@ -363,7 +363,7 @@
       hands: {'every':[7.5,10],'warn':1.5}
     },
     {
-      id: '2-4', light: 2.5, par: 50, hints: ['hint.oneway'],
+      id: '2-4', light: 2.5, par: 60, hints: ['hint.oneway'],
       map: [
         'o * o-o-o-o-o-o',
         '| | | |   ^   |',
@@ -393,7 +393,7 @@
       hands: {'every':[8,11],'warn':1.5}
     },
     {
-      id: '2-5', light: 2.5, par: 55, hints: ['hint.key'],
+      id: '2-5', light: 2.5, par: 65, hints: ['hint.key'],
       map: [
         'o-o-o-o o-o-o-R',
         '|     | | |   |',
@@ -423,7 +423,7 @@
       balloons: [{'a':[7,5],'b':[1,5],'speed':1.14,'phase':0.87}]
     },
     {
-      id: '2-6', light: 2.5, par: 60, hints: [],
+      id: '2-6', light: 2.5, par: 70, hints: [],
       map: [
         'o-o-o-o-o-o-o-o',
         '| | | |   |   |',
@@ -453,7 +453,7 @@
       balloons: [{'a':[0,7],'b':[0,0],'speed':1.01,'phase':0.69},{'a':[4,7],'b':[4,2],'speed':1.04,'phase':0.72}]
     },
     {
-      id: '2-7', light: 2.5, par: 65, hints: [],
+      id: '2-7', light: 2.5, par: 80, hints: [],
       map: [
         'opo-* o-o-o-o-o-o',
         '| |   |     # | c',
@@ -483,7 +483,7 @@
       hands: {'every':[7,10],'warn':1.45}
     },
     {
-      id: '2-8', light: 2.5, par: 60, hints: [],
+      id: '2-8', light: 2.5, par: 70, hints: [],
       map: [
         'o-o-o-o-o-o-o-o-o',
         '|         |     |',
@@ -515,7 +515,7 @@
       balloons: [{'a':[2,9],'b':[6,9],'speed':1.14,'phase':0.87},{'a':[8,8],'b':[4,8],'speed':1.14,'phase':0.64},{'a':[2,8],'b':[2,3],'speed':1.15,'phase':0.1}]
     },
     {
-      id: '2-9', light: 2.5, par: 65, hints: [],
+      id: '2-9', light: 2.5, par: 75, hints: [],
       map: [
         'o-o *-o-o-o-o-o-o',
         '| |     ^   | |  ',
@@ -548,7 +548,7 @@
       hands: {'every':[6.5,9],'warn':1.4}
     },
     {
-      id: '2-10', light: 2.5, par: 70, hints: [],
+      id: '2-10', light: 2.5, par: 80, hints: [],
       map: [
         'o-T-o-o-o-o-o-o-o',
         '|     | |   |   |',
@@ -583,7 +583,7 @@
       hands: {'every':[6,8.5],'warn':1.4}
     },
     {
-      id: '3-1', light: 2.25, par: 50, hints: ['hint.crumble'],
+      id: '3-1', light: 2.25, par: 55, hints: ['hint.crumble'],
       map: [
         'o-* o-o-o-o-* E',
         '| | |     |   |',
@@ -611,7 +611,7 @@
       balloons: [{'a':[4,1],'b':[1,1],'speed':1.09,'phase':0.18}]
     },
     {
-      id: '3-2', light: 2.25, par: 50, hints: ['hint.portal'],
+      id: '3-2', light: 2.25, par: 55, hints: ['hint.portal'],
       map: [
         'o-o-o>o *-o-o-o',
         '|   | |   | | |',
@@ -641,7 +641,7 @@
       hands: {'every':[7,9.5],'warn':1.4}
     },
     {
-      id: '3-3', light: 2.25, par: 45, hints: [],
+      id: '3-3', light: 2.25, par: 50, hints: [],
       map: [
         '*-A o-o-o-o-o-M',
         '  | | | | |    ',
@@ -671,7 +671,7 @@
       balloons: [{'a':[5,5],'b':[2,5],'speed':1.08,'phase':0.29},{'a':[7,7],'b':[7,3],'speed':1.09,'phase':0.07}]
     },
     {
-      id: '3-4', light: 2.25, par: 70, hints: [],
+      id: '3-4', light: 2.25, par: 80, hints: [],
       map: [
         'o-o o-o o-o o o-E',
         '| | | | | | | c |',
@@ -701,7 +701,7 @@
       hands: {'every':[6,8.5],'warn':1.35}
     },
     {
-      id: '3-5', light: 2.25, par: 50, hints: [],
+      id: '3-5', light: 2.25, par: 60, hints: [],
       map: [
         'o-o-o-o o-o-o o-o',
         '|     | | | | | |',
@@ -733,7 +733,7 @@
       balloons: [{'a':[6,7],'b':[6,4],'speed':1.21,'phase':0.11},{'a':[1,3],'b':[1,10],'speed':1.2,'phase':0.44}]
     },
     {
-      id: '3-6', light: 2.25, par: 55, hints: [],
+      id: '3-6', light: 2.25, par: 65, hints: [],
       map: [
         'o-o-o-o-o-o-o o-o',
         '| | | v     | | |',
@@ -766,7 +766,7 @@
       hands: {'every':[6,8],'warn':1.35}
     },
     {
-      id: '3-7', light: 2.25, par: 70, hints: [],
+      id: '3-7', light: 2.25, par: 85, hints: [],
       map: [
         'M o-oco-o-o-o-o o',
         '| c     |     | |',
@@ -800,7 +800,7 @@
       hands: {'every':[5.5,8],'warn':1.3}
     },
     {
-      id: '3-8', light: 2.25, par: 65, hints: [],
+      id: '3-8', light: 2.25, par: 75, hints: [],
       map: [
         'A-o#o-E o-o-o-o o-o',
         '~ |     | |   | |  ',
@@ -834,7 +834,7 @@
       balloons: [{'a':[9,1],'b':[9,8],'speed':1.17,'phase':0.71},{'a':[9,11],'b':[9,7],'speed':1.2,'phase':0.81},{'a':[6,3],'b':[9,3],'speed':1.09,'phase':0.34}]
     },
     {
-      id: '3-9', light: 2.25, par: 80, hints: [],
+      id: '3-9', light: 2.25, par: 100, hints: [],
       map: [
         'o-o-* o o-* o-opo-o',
         'p     | |   |   | |',
@@ -871,7 +871,7 @@
       hands: {'every':[5.5,7.5],'warn':1.3}
     },
     {
-      id: '3-10', light: 2.25, par: 80, hints: ['hint.final'],
+      id: '3-10', light: 2.25, par: 95, hints: ['hint.final'],
       map: [
         'o-o-o-o-o-o-o-o o-o',
         '  | p   |       | |',

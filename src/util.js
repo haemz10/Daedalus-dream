@@ -3,7 +3,7 @@
   'use strict';
   var DD = (globalThis.DD = globalThis.DD || {});
 
-  DD.VERSION = '1.1.0';
+  DD.VERSION = '1.2.0';
 
   // Directions: 0 = North (up), 1 = East, 2 = South, 3 = West (clockwise).
   DD.DX = [0, 1, 0, -1];

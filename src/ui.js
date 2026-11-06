@@ -316,11 +316,20 @@
       $('set-dpad').checked = !!d.dpad;
       $('set-motion').checked = !!d.reduceMotion;
       buildLangGrid();
+      syncSpeed();
       settingsClose = resolve;
       modal('modal-settings', true);
     });
   }
+  function syncSpeed() {
+    document.querySelectorAll('#speed-grid button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(+b.getAttribute('data-speed') === (DD.Save.data.speed || 1)));
+    });
+  }
   function bindSettings() {
+    document.querySelectorAll('#speed-grid button').forEach(function (b) {
+      b.addEventListener('click', function () { DD.Save.data.speed = +b.getAttribute('data-speed'); DD.Save.save(); DD.Audio.play('ui'); syncSpeed(); });
+    });
     $('set-music').addEventListener('input', function (e) { DD.Save.data.music = e.target.value / 100; DD.Audio.setVolumes(DD.Save.data.music, DD.Save.data.sfx); });
     $('set-sfx').addEventListener('input', function (e) { DD.Save.data.sfx = e.target.value / 100; DD.Audio.setVolumes(DD.Save.data.music, DD.Save.data.sfx); });
     $('set-sfx').addEventListener('change', function () { DD.Audio.play('shard'); });

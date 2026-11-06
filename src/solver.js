@@ -101,7 +101,7 @@
   // Goal time for the "fast" star: generous enough for a second attempt.
   function parFor(L, sol, speed) {
     if (!sol || !sol.ok) return 0;
-    var t = sol.moves / (speed || 4.8) * 2.1 + sol.rotations * 0.8 + 8 + L.shards.length;
+    var t = sol.moves / (speed || 3.3) * 1.8 + sol.rotations * 0.8 + 8 + L.shards.length;
     return Math.ceil(t / 5) * 5;
   }
 
